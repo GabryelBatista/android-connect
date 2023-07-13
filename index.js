@@ -18,10 +18,7 @@ cache
 
 async function main() {
   pathScrcpy = await cache.getItem("pathScrcpy");
-  pathScrcpy = "\\" + pathScrcpy;
-  if (pathScrcpy == undefined) downloadScrcpy();
-
-  menu();
+  pathScrcpy == undefined ? downloadScrcpy() : menu();
 }
 
 function menu() {
@@ -78,7 +75,7 @@ function pair() {
     ])
     .then((answers) => {
       exec(
-        `cd ${process.cwd() + pathScrcpy} && adb pair ${answers.ip}:${
+        `cd ${process.cwd() + "\\" + pathScrcpy} && adb pair ${answers.ip}:${
           answers.port
         } ${answers.code}`,
         (err, stdout, stderr) => {
@@ -107,7 +104,7 @@ function connect() {
     ])
     .then((answers) => {
       exec(
-        `cd ${process.cwd() + pathScrcpy} && adb connect ${answers.ip}:${
+        `cd ${process.cwd() + "\\" + pathScrcpy} && adb connect ${answers.ip}:${
           answers.port
         }`,
         (err, stdout, stderr) => {
@@ -121,26 +118,32 @@ function connect() {
 }
 
 function disconnect() {
-  inquirer.prompt([
-    {type: "list", name: "action", message: "What do you want to do?", choices: ["Disconnect by IP", "Disconnect All"]},
-  ]).then((answers) => {
-    switch (answers.action) {
-      case "Disconnect by IP":
-        disconnectByIp();
-        break;
-      case "Disconnect All":
-        disconnectAll();
-        break;
-      default:
-        break;
-    }
-  })
-
+  inquirer
+    .prompt([
+      {
+        type: "list",
+        name: "action",
+        message: "What do you want to do?",
+        choices: ["Disconnect by IP", "Disconnect All"],
+      },
+    ])
+    .then((answers) => {
+      switch (answers.action) {
+        case "Disconnect by IP":
+          disconnectByIp();
+          break;
+        case "Disconnect All":
+          disconnectAll();
+          break;
+        default:
+          break;
+      }
+    });
 }
 
 function disconnectAll() {
   exec(
-    `cd ${process.cwd() + pathScrcpy} && adb disconnect`,
+    `cd ${process.cwd() + "\\" + pathScrcpy} && adb disconnect`,
     (err, stdout, stderr) => {
       if (err) throw err;
       console.log(stdout);
@@ -166,9 +169,9 @@ function disconnectByIp() {
     ])
     .then(async (answers) => {
       exec(
-        `cd ${process.cwd() + pathScrcpy} && adb disconnect ${answers.ip}:${
-          answers.port
-        }`,
+        `cd ${process.cwd() + "\\" + pathScrcpy} && adb disconnect ${
+          answers.ip
+        }:${answers.port}`,
         (err, stdout, stderr) => {
           if (err) throw err;
           console.log(stdout);
@@ -181,7 +184,7 @@ function disconnectByIp() {
 
 function list() {
   exec(
-    `cd ${process.cwd() + pathScrcpy} && adb devices`,
+    `cd ${process.cwd() + "\\" + pathScrcpy} && adb devices`,
     (err, stdout, stderr) => {
       if (err) throw err;
       console.log(stdout);
@@ -192,7 +195,7 @@ function list() {
 
 function screenConnect() {
   exec(
-    `cd ${process.cwd() + pathScrcpy} && scrcpy.exe`,
+    `cd ${process.cwd() + "\\" + pathScrcpy} && scrcpy.exe`,
     (err, stdout, stderr) => {
       if (err) throw err;
       console.log(stdout);
@@ -206,6 +209,7 @@ function downloadScrcpy() {
   exec(
     `winget install scrcpy --location ${process.cwd()}`,
     (err, stdout, stderr) => {
+      console.log(stdout);
       fs.readdir(`${process.cwd()}`, (err, files) => {
         if (err) throw err;
         const folderPattern = /^scrcpy-win64-v\d+\.\d+$/;
@@ -214,6 +218,7 @@ function downloadScrcpy() {
           if (folderPattern.test(file)) {
             cache.setItem("pathScrcpy", file);
             pathScrcpy = file;
+            menu();
           }
         });
       });
